@@ -116,6 +116,10 @@ points = pickle.load(open("data/points.pkl", "rb"))
 
 test_png = 'team_32.png' # Logo Team_32
 test_base64 = base64.b64encode(open(test_png, 'rb').read()).decode('ascii')
+ds4a_png = 'ds4a.png' # Logo DS4A
+ds4a_base64 = base64.b64encode(open(ds4a_png, 'rb').read()).decode('ascii')
+min_png = 'mintic.png' # Logo DS4A
+min_base64 = base64.b64encode(open(min_png, 'rb').read()).decode('ascii')
 
 # Create app layout
 app.layout = html.Div(
@@ -138,6 +142,14 @@ app.layout = html.Div(
                 ),
                 html.Img(
                     src='data:image/png;base64,{}'.format(test_base64),
+                    className='two columns',
+                ),
+                html.Img(
+                    src='data:image/png;base64,{}'.format(ds4a_base64),
+                    className='two columns',
+                ),
+                html.Img(
+                    src='data:image/png;base64,{}'.format(min_base64),
                     className='two columns',
                 ),
             ],
@@ -221,7 +233,7 @@ app.layout = html.Div(
                             [
                                 html.Div(
                                     [
-                                        html.P("No. of Wells"),
+                                        html.P("Women"),
                                         html.H6(
                                             id="well_text",
                                             className="info_text"
@@ -235,7 +247,7 @@ app.layout = html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.P("Gas"),
+                                                html.P("Men"),
                                                 html.H6(
                                                     id="gasText",
                                                     className="info_text"
@@ -246,7 +258,7 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                html.P("Oil"),
+                                                html.P("Age Average"),
                                                 html.H6(
                                                     id="oilText",
                                                     className="info_text"
@@ -257,7 +269,7 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                html.P("Water"),
+                                                html.P("Born Here"),
                                                 html.H6(
                                                     id="waterText",
                                                     className="info_text"
