@@ -91,6 +91,11 @@ analysis_options = [{'label': str(analysis_var[analysis]),
                      'value': str(analysis)}
                       for analysis in analysis_var]
 
+def filtrar_municipios(codigo_departamento):
+    for i in range(len(municipios_options)):
+        if municipios_options[i]['value'][0:2] == departments_options[0]['value']:
+            print(municipios_options[i]['label'])
+
 
 test_png = 'team_32.png' # Logo Team_32
 test_base64 = base64.b64encode(open(test_png, 'rb').read()).decode('ascii')
@@ -165,7 +170,7 @@ app.layout = html.Div(
                             className="dcc_control"
                         ),
                         dcc.Dropdown(
-                            id='departments_code',
+                            id='dropdown_options',
                             options=departments_options,
                             multi=True,
                             value= [],
@@ -369,9 +374,9 @@ html.Button('Back to departments', id='boton-back')
 
 
 @app.callback(
-    Output(component_id = 'departments_code', component_property = 'value'),
+    Output('dropdown_options','value'),
     [
-        Input(component_id = 'department_selector', component_property = 'value')
+        Input('department_selector', 'value')
     ]
 )
 def update_dropdown(radio_buttom):
@@ -388,12 +393,12 @@ def update_dropdown(radio_buttom):
 @app.callback(
                 Output(component_id = 'map-plot-departamentos',component_property = 'figure'),
               [
-                Input(component_id = 'departments_code',component_property = 'value')
+                Input(component_id = 'dropdown_options',component_property = 'value')
               ]
              )
-def update_map(departments_code):
-    filtered_df_sexo = filtrar_departamento(df_dpto_sexo,departments_code)
-    filtered_df_poblacion = filtrar_departamento(df_dpto_poblacion,departments_code)
+def update_map(dropdown_options):
+    filtered_df_sexo = filtrar_departamento(df_dpto_sexo,dropdown_options)
+    filtered_df_poblacion = filtrar_departamento(df_dpto_poblacion,dropdown_options)
     z_to_show = filtered_df_sexo.groupby(['u_dpto', 'nombre_departamento']).sum()[['poblacion']].reset_index()
     return {'data': [go.Choroplethmapbox(
                                     geojson=geojson_departamentos,
@@ -451,12 +456,12 @@ def update_gender_count_boxes(map_data):
     [
         Output('div-map-departamentos', 'style'), # Ocultar div de mapa de departamentos
         Output('div-map-municipios', 'style'), # Mostrar div de mapa de municipios
-        Output('map-plot-municipios', 'figure')
+        Output('map-plot-municipios', 'figure'),
+        Output('dropdown_options','options')
     ],
     [
         Input('map-plot-departamentos', 'clickData'), # Esta es para cuando se hace click
-        Input('boton-back', 'n_clicks') # Esta es para cuando se hace click
-
+        Input('boton-back', 'n_clicks')# Esta es para cuando se hace click
     ]
 )
 def mostrar_departamentos_municipios(map_data_departamentos, boton_a_departamentos):
@@ -474,14 +479,16 @@ def mostrar_departamentos_municipios(map_data_departamentos, boton_a_departament
         return [
             {'display': 'block'}, # Mostrar departamentos
             {'display': 'none'},  # Ocultar municipios
-            {}
+            {},
+            departments_options
         ]
 
     else:
         municipios_flag = True
         # Armar lista con el subconjunto de municipios contenido en el departamento
         lista_municipios = [i for i in geojson_municipios['features'] if str(i['id'])[:2] == str(map_data_departamentos['points'][0]['location'])]
-
+        lista_nombres_municipios = [{'label' : str(i['properties']['NOMBRE_MPI']),
+                                     'value' : str(i['properties']['MPIOS'])} for i in lista_municipios] 
         # Armar nuevo geojson
         geojson_departamento_municipios = {
         "type": "FeatureCollection",
@@ -496,7 +503,6 @@ def mostrar_departamentos_municipios(map_data_departamentos, boton_a_departament
         zoom = diccionario_zoom_center[map_data_departamentos['points'][0]['location']]['zoom']
         # Ajustar el centro de la posición adecuada al departamento seleccionado
         posicion_centro = diccionario_zoom_center[map_data_departamentos['points'][0]['location']]['center']
-
         # Devolver el mapa con los parametros
         return [
             {'display': 'none'}, # Ocultar departamentos
@@ -533,7 +539,8 @@ def mostrar_departamentos_municipios(map_data_departamentos, boton_a_departament
                 margin={'t': 0, 'l': 0, 'r': 0, 'b': 0, 'pad':0},
                 mapbox_center=posicion_centro
                 )
-            }
+            },
+            lista_nombres_municipios
         ]
 ########## Callback para ocultar mapa por departamentos y mostrar mapa por municipios y viceversa ##########
 
