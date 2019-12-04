@@ -181,7 +181,7 @@ app.layout = html.Div(
                                                     className="info_text"
                                                 )
                                             ],
-                                            id="gas",
+                                            id="men_percentage",
                                             className="pretty_container"
                                         ),
                                         html.Div(
@@ -337,7 +337,9 @@ def update_dropdown(radio_buttom):
    [
         Output('municipalities_text', 'children'),
         Output('variable_percentage_text','children'),
-        Output('variable_text','children')
+        Output('variable_text','children'),
+        Output('women_text','children'),
+        Output('men_text','children')
    ],
    [
         Input('map-plot-municipios', 'hoverData'),# Esta es para cuando se pasa el mouse por encima
@@ -345,11 +347,17 @@ def update_dropdown(radio_buttom):
         Input('analysis_dropdown_options','value')
    ]
 )
-def update_gender_count_boxes(map_data,cluster_dropdown,analysis_dropdown_options):
+def update_text_boxes(map_data,cluster_dropdown,analysis_dropdown_options):
     filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+    municipio = [each['location'] for each in map_data['points']] if map_data else None
+    filtered_df_sex = df_master[df_master['str_dpto_mpio'] == municipio[0]]
+    percentage_men = filtered_df_sex['sexo_m']/(filtered_df_sex['sexo_m'] + filtered_df_sex['sexo_f'])
+    percentage_women = filtered_df_sex['sexo_f']/(filtered_df_sex['sexo_m'] + filtered_df_sex['sexo_f'])
     return [filtered_df.shape[0],
             r'{:.1%}'.format(filtered_df[analysis_dropdown_options].mean()),
-            analysis_dropdown_options.title()]
+            analysis_dropdown_options.title(),
+            r'{:.2%}'.format((percentage_women.values[0])),
+            r'{:.2%}'.format((percentage_men.values[0]))]
 
 
 @app.callback(
