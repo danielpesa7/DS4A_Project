@@ -370,6 +370,7 @@ def update_text_boxes(map_data,cluster_dropdown,analysis_dropdown_options):
 )
 def update_map(cluster_dropdown):
     filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+    text = filtered_df['municipio'] + ',' + filtered_df['departamento'] + '.' + filtered_df['poblacion'].apply(lambda x : 'Población: ' + str(f'{x:,}'))
     return [{ 
             'data': [go.Choroplethmapbox(
                                     geojson=geojson_municipios,
@@ -386,7 +387,7 @@ def update_map(cluster_dropdown):
                                                 [0.80, "rgb(51,160,44)"],
                                                 [0.80, "rgb(138,43,226)"],
                                                 [1,    "rgb(138,43,226)"]], #Colores del degradé del mapa: Cividis, Viridis, Magma 
-                                    text=filtered_df['u_mpio'],
+                                    text=text,
                                     colorbar=
                                     {
                                       'title':'Clúster', #Título de la barra de colores
