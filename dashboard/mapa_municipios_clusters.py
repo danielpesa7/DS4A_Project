@@ -141,6 +141,16 @@ app.layout = html.Div(
                             value= [],
                             className="dcc_control"
                         ),
+                        dcc.RadioItems(
+                            id='group_button_selector',
+                            options=[
+                                {'label': 'Clustered ', 'value': 'clustered'},
+                                {'label': 'Municipality ', 'value': 'municipality'}
+                            ],
+                            value='clustered',
+                            labelStyle={'display': 'inline-block'},
+                            className="dcc_control"
+                        ),
                         html.P(
                             'Filter by welfare variable:',
                             className="control_label"
@@ -325,8 +335,8 @@ app.layout = html.Div(
         Input('cluster_button_selector', 'value')
     ]
 )
-def update_dropdown(radio_buttom):
-    if radio_buttom == 'all':
+def update_dropdown(radio_button):
+    if radio_button == 'all':
         filtered_list = ['0','1','2','3','4']
         return filtered_list
     else:
@@ -336,28 +346,40 @@ def update_dropdown(radio_buttom):
 @app.callback(
    [
         Output('municipalities_text', 'children'),
-        Output('variable_percentage_text','children'),
+        Output('variable_percentage_text','children'), #Cambia
         Output('variable_text','children'),
-        Output('women_text','children'),
-        Output('men_text','children')
+        Output('women_text','children'), #Cambia
+        Output('men_text','children') #Cambia
    ],
    [
         Input('map-plot-municipios', 'hoverData'),# Esta es para cuando se pasa el mouse por encima
         Input('cluster_dropdown_options','value'),
-        Input('analysis_dropdown_options','value')
+        Input('analysis_dropdown_options','value'),
+        Input('group_button_selector','value')
    ]
 )
-def update_text_boxes(map_data,cluster_dropdown,analysis_dropdown_options):
-    filtered_df = filtrar_cluster(df_master,cluster_dropdown)
-    municipio = [each['location'] for each in map_data['points']] if map_data else None
-    filtered_df_sex = df_master[df_master['str_dpto_mpio'] == municipio[0]]
-    percentage_men = filtered_df_sex['sexo_m']/(filtered_df_sex['sexo_m'] + filtered_df_sex['sexo_f'])
-    percentage_women = filtered_df_sex['sexo_f']/(filtered_df_sex['sexo_m'] + filtered_df_sex['sexo_f'])
-    return [filtered_df.shape[0],
-            r'{:.1%}'.format(filtered_df[analysis_dropdown_options].mean()),
-            analysis_dropdown_options.title(),
-            r'{:.2%}'.format((percentage_women.values[0])),
-            r'{:.2%}'.format((percentage_men.values[0]))]
+def update_text_boxes(map_data,cluster_dropdown,analysis_dropdown_options,group_button):
+    if group_button == 'clustered':
+        filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+        percentage_men = filtered_df['sexo_m'].sum()/filtered_df['poblacion'].sum()
+        percentage_women = filtered_df['sexo_f'].sum()/filtered_df['poblacion'].sum()
+        return [filtered_df.shape[0],
+                r'{:.1%}'.format(filtered_df[analysis_dropdown_options].mean()),
+                analysis_dropdown_options.title(),
+                r'{:.2%}'.format((percentage_women)),
+                r'{:.2%}'.format((percentage_men))]
+    elif group_button == 'municipality':
+        filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+        municipio = [each['location'] for each in map_data['points']] if map_data else None
+        filtered_df_sex = df_master[df_master['str_dpto_mpio'] == municipio[0]]
+        percentage_men = filtered_df_sex['sexo_m']/(filtered_df_sex['sexo_m'] + filtered_df_sex['sexo_f'])
+        percentage_women = filtered_df_sex['sexo_f']/(filtered_df_sex['sexo_m'] + filtered_df_sex['sexo_f'])
+        analysis_var_mun = filtered_df[filtered_df['str_dpto_mpio'] == municipio[0]][analysis_dropdown_options]
+        return [filtered_df.shape[0],
+                r'{:.2%}'.format(analysis_var_mun.values[0]),
+                analysis_dropdown_options.title(),
+                r'{:.2%}'.format((percentage_women.values[0])),
+                r'{:.2%}'.format((percentage_men.values[0]))]
 
 
 @app.callback(
@@ -416,7 +438,6 @@ def update_map(cluster_dropdown):
                                         mapbox_center={"lat": 4.5709, "lon": -74.2973}
                                     )
                             }]
-
 
 
 # Main
