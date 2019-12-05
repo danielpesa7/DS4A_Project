@@ -20,6 +20,7 @@ import pandas as pd
 import json
 from flask import Flask
 
+df = pd.read_csv('https://gist.githubusercontent.com/chriddyp/5d1ea79569ed194d432e56108a04d188/raw/a9f9e8076b837d541398e999dcbac2b2826a81f8/gdp-life-exp-2007.csv')
 '''
 # Importacion de las credenciales
 from credentials import *
@@ -203,7 +204,7 @@ app.layout = html.Div(
                                                     className="info_text"
                                                 )
                                             ],
-                                            id="oil",
+                                            id="women_percentage",
                                             className="pretty_container"
                                         ),
                                         html.Div(
@@ -214,7 +215,7 @@ app.layout = html.Div(
                                                     className="info_text"
                                                 )
                                             ],
-                                            id="water",
+                                            id="municipalities_count",
                                             className="pretty_container"
                                         ),
                                     ],
@@ -290,13 +291,40 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
-                        dcc.Graph(id='main_graph')
+                        dcc.Graph(id='bar_graph',
+                                  figure={}
+    )
                     ],
                     className='pretty_container eight columns',
                 ),
                 html.Div(
                     [
-                        dcc.Graph(id='individual_graph')
+                        dcc.Graph(
+        id='life-exp-vs-gdp',
+        figure={
+            'data': [
+                dict(
+                    x=df[df['continent'] == i]['gdp per capita'],
+                    y=df[df['continent'] == i]['life expectancy'],
+                    text=df[df['continent'] == i]['country'],
+                    mode='markers',
+                    opacity=0.7,
+                    marker={
+                        'size': 15,
+                        'line': {'width': 0.5, 'color': 'white'}
+                    },
+                    name=i
+                ) for i in df.continent.unique()
+            ],
+            'layout': dict(
+                xaxis={'type': 'log', 'title': 'GDP Per Capita'},
+                yaxis={'title': 'Life Expectancy'},
+                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                legend={'x': 0, 'y': 1},
+                hovermode='closest'
+            )
+        }
+    )
                     ],
                     className='pretty_container four columns',
                 ),
@@ -439,6 +467,32 @@ def update_map(cluster_dropdown):
                                     )
                             }]
 
+@app.callback(
+    [
+    Output('bar_graph','figure')
+    ],
+    [
+    Input('cluster_dropdown_options','value'),
+    Input('analysis_dropdown_options','value')
+    ]
+)
+def update_barplot(cluster_dropdown,analysis_dropdown_options):
+    filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+    df_cluster0 = filtered_df[filtered_df['labels'] == 0].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
+    df_cluster1 = filtered_df[filtered_df['labels'] == 1].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
+    df_cluster2 = filtered_df[filtered_df['labels'] == 2].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
+    df_cluster3 = filtered_df[filtered_df['labels'] == 3].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
+    df_cluster4 = filtered_df[filtered_df['labels'] == 4].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
+    return [{'data': [
+                    {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0'},
+                    {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1'},
+                    {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2'},
+                    {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3'},
+                    {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4'}
+                    ],
+                    'layout': {
+                    'title': analysis_dropdown_options.title() + ' Top 5'}
+            }]
 
 # Main
 if __name__ == '__main__':
