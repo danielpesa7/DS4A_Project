@@ -20,7 +20,6 @@ import pandas as pd
 import json
 from flask import Flask
 
-df = pd.read_csv('https://gist.githubusercontent.com/chriddyp/5d1ea79569ed194d432e56108a04d188/raw/a9f9e8076b837d541398e999dcbac2b2826a81f8/gdp-life-exp-2007.csv')
 '''
 # Importacion de las credenciales
 from credentials import *
@@ -84,6 +83,7 @@ min_base64 = base64.b64encode(open(min_png, 'rb').read()).decode('ascii')
 
 app = dash.Dash(__name__)
 server = app.server
+
 
 # Create app layout
 app.layout = html.Div(
@@ -161,6 +161,38 @@ app.layout = html.Div(
                             options=analysis_options,
                             multi=False,
                             value=[],
+                            className="dcc_control"
+                        ),
+                        html.P(
+                            'Select Scatter Plot options:',
+                            className="control_label"
+                        ),
+                        dcc.Dropdown(
+                            id='scatter1_dropdown_options',
+                            options=analysis_options,
+                            multi=False,
+                            value=[],
+                            className="dcc_control"
+                        ),
+                        dcc.Dropdown(
+                            id='scatter2_dropdown_options',
+                            options=analysis_options,
+                            multi=False,
+                            value=[],
+                            className="dcc_control"
+                        ),
+                        html.P(
+                            'Select Top:',
+                            className="control_label"
+                        ),
+                        dcc.RadioItems(
+                            id='top_button_selector',
+                            options=[
+                                {'label': 'Highest 5 ', 'value': 'high_5'},
+                                {'label': 'Lowest 5 ', 'value': 'low_5'}
+                            ],
+                            value='high_5',
+                            labelStyle={'display': 'inline-block'},
                             className="dcc_control"
                         ),
                     ],
@@ -291,39 +323,17 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
-                        dcc.Graph(id='bar_graph',
+                        dcc.Graph(id='bar_graph_cluster',
                                   figure={}
-    )
+    ),
                     ],
                     className='pretty_container eight columns',
                 ),
                 html.Div(
                     [
                         dcc.Graph(
-        id='life-exp-vs-gdp',
-        figure={
-            'data': [
-                dict(
-                    x=df[df['continent'] == i]['gdp per capita'],
-                    y=df[df['continent'] == i]['life expectancy'],
-                    text=df[df['continent'] == i]['country'],
-                    mode='markers',
-                    opacity=0.7,
-                    marker={
-                        'size': 15,
-                        'line': {'width': 0.5, 'color': 'white'}
-                    },
-                    name=i
-                ) for i in df.continent.unique()
-            ],
-            'layout': dict(
-                xaxis={'type': 'log', 'title': 'GDP Per Capita'},
-                yaxis={'title': 'Life Expectancy'},
-                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                legend={'x': 0, 'y': 1},
-                hovermode='closest'
-            )
-        }
+        id='scatter_plot',
+        figure={}
     )
                     ],
                     className='pretty_container four columns',
@@ -335,13 +345,13 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
-                        dcc.Graph(id='pie_graph')
+                        dcc.Graph(id='box-plot')
                     ],
                     className='pretty_container seven columns',
                 ),
                 html.Div(
                     [
-                        dcc.Graph(id='aggregate_graph')
+                        dcc.Graph(id='bar_graph')
                     ],
                     className='pretty_container five columns',
                 ),
@@ -392,7 +402,7 @@ def update_text_boxes(map_data,cluster_dropdown,analysis_dropdown_options,group_
         percentage_men = filtered_df['sexo_m'].sum()/filtered_df['poblacion'].sum()
         percentage_women = filtered_df['sexo_f'].sum()/filtered_df['poblacion'].sum()
         return [filtered_df.shape[0],
-                r'{:.1%}'.format(filtered_df[analysis_dropdown_options].mean()),
+                r'{:.2%}'.format(filtered_df[analysis_dropdown_options].mean()),
                 analysis_dropdown_options.title(),
                 r'{:.2%}'.format((percentage_women)),
                 r'{:.2%}'.format((percentage_men))]
@@ -473,26 +483,196 @@ def update_map(cluster_dropdown):
     ],
     [
     Input('cluster_dropdown_options','value'),
+    Input('analysis_dropdown_options','value'),
+    Input('top_button_selector','value')
+    ]
+)
+def update_barplot(cluster_dropdown,analysis_dropdown_options,top_button_selector):
+    if top_button_selector == 'high_5':
+        filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+        df_cluster0 = filtered_df[filtered_df['labels'] == 0].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
+        df_cluster1 = filtered_df[filtered_df['labels'] == 1].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
+        df_cluster2 = filtered_df[filtered_df['labels'] == 2].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
+        df_cluster3 = filtered_df[filtered_df['labels'] == 3].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
+        df_cluster4 = filtered_df[filtered_df['labels'] == 4].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
+        return [{'data': [
+                        {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0'},
+                        {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1'},
+                        {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2'},
+                        {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3'},
+                        {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4'}
+                        ],
+                        'layout': {
+                        'title': analysis_dropdown_options.title() + ' Highest 5'}
+                }]
+    else:
+        filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+        df_cluster0 = filtered_df[filtered_df['labels'] == 0].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
+        df_cluster1 = filtered_df[filtered_df['labels'] == 1].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
+        df_cluster2 = filtered_df[filtered_df['labels'] == 2].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
+        df_cluster3 = filtered_df[filtered_df['labels'] == 3].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
+        df_cluster4 = filtered_df[filtered_df['labels'] == 4].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
+        return [{'data':[
+                        {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0'},
+                        {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1'},
+                        {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2'},
+                        {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3'},
+                        {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4'}
+                        ],
+                        'layout': {
+                        'title': analysis_dropdown_options.title() + ' Lowest 5'}
+                }]
+
+
+@app.callback(
+    [
+    Output('scatter_plot','figure')
+    ],
+    [
+    Input('cluster_dropdown_options','value'),
+    Input('analysis_dropdown_options','value'),
+    Input('scatter1_dropdown_options','value'),
+    Input('scatter2_dropdown_options','value')
+    ]
+)
+def update_scatterplot(cluster_dropdown,analysis_dropdown_options,scatter1_dropdown_options, scatter2_dropdown_options):
+    filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+    return [
+            {
+            'data': [
+                dict(
+                    x=filtered_df[filtered_df['labels'] == i][scatter1_dropdown_options],
+                    y=filtered_df[filtered_df['labels'] == i][scatter2_dropdown_options],
+                    text=filtered_df[filtered_df['labels'] == i]['municipio'],
+                    mode='markers',
+                    opacity=0.7,
+                    marker={
+                        'size': 15,
+                        'line': {'width': 0.5, 'color': 'white'}
+                    },
+                    name = 'Clúster ' + str(i)
+                ) for i in filtered_df.labels.unique()
+            ],
+            'layout': dict(
+                xaxis={'type': 'log', 'title': scatter1_dropdown_options.title()},
+                yaxis={'title': scatter2_dropdown_options.title()},
+                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                legend={'x': 0, 'y': 1},
+                hovermode='closest'
+            )
+        }]
+
+
+@app.callback(
+    [
+    Output('bar_graph_cluster','figure')
+    ],
+    [
+    Input('cluster_dropdown_options','value')
+    ]
+)
+def update_barplot_cluster(cluster_dropdown):
+    filtered_df = filtrar_cluster(df_master,cluster_dropdown)
+    df_cluster0 = filtered_df[filtered_df['labels'] == 0].describe().loc['mean',lista_columnas_analisis]
+    df_cluster1 = filtered_df[filtered_df['labels'] == 1].describe().loc['mean',lista_columnas_analisis]
+    df_cluster2 = filtered_df[filtered_df['labels'] == 2].describe().loc['mean',lista_columnas_analisis]
+    df_cluster3 = filtered_df[filtered_df['labels'] == 3].describe().loc['mean',lista_columnas_analisis]
+    df_cluster4 = filtered_df[filtered_df['labels'] == 4].describe().loc['mean',lista_columnas_analisis]
+    return [{'data':[
+                    {'x': df_cluster0.index, 'y': df_cluster0.values, 'type': 'bar', 'name': 'Clúster 0'},
+                    {'x': df_cluster1.index, 'y': df_cluster1.values, 'type': 'bar', 'name': 'Clúster 1'},
+                    {'x': df_cluster2.index, 'y': df_cluster2.values, 'type': 'bar', 'name': 'Clúster 2'},
+                    {'x': df_cluster2.index, 'y': df_cluster3.values, 'type': 'bar', 'name': 'Clúster 3'},
+                    {'x': df_cluster2.index, 'y': df_cluster4.values, 'type': 'bar', 'name': 'Clúster 4'}
+                    ],
+                        'layout': {
+                        'title': 'Clúster Variables',
+                        'orientation':'h'}
+                }]
+
+
+@app.callback(
+    [
+    Output('box-plot','figure')
+    ],
+    [
+    Input('cluster_dropdown_options','value'),
     Input('analysis_dropdown_options','value')
     ]
 )
-def update_barplot(cluster_dropdown,analysis_dropdown_options):
+def update_boxplot(cluster_dropdown,analysis_dropdown_options):
     filtered_df = filtrar_cluster(df_master,cluster_dropdown)
-    df_cluster0 = filtered_df[filtered_df['labels'] == 0].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
-    df_cluster1 = filtered_df[filtered_df['labels'] == 1].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
-    df_cluster2 = filtered_df[filtered_df['labels'] == 2].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
-    df_cluster3 = filtered_df[filtered_df['labels'] == 3].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
-    df_cluster4 = filtered_df[filtered_df['labels'] == 4].sort_values(by = analysis_dropdown_options, ascending = False)[0:5]
-    return [{'data': [
-                    {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0'},
-                    {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1'},
-                    {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2'},
-                    {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3'},
-                    {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4'}
-                    ],
-                    'layout': {
-                    'title': analysis_dropdown_options.title() + ' Top 5'}
-            }]
+    df_cluster0 = filtered_df[filtered_df['labels'] == 0]
+    df_cluster1 = filtered_df[filtered_df['labels'] == 1]
+    df_cluster2 = filtered_df[filtered_df['labels'] == 2]
+    df_cluster3 = filtered_df[filtered_df['labels'] == 3]
+    df_cluster4 = filtered_df[filtered_df['labels'] == 4]
+
+    boxplot_0 = go.Box(
+        y = df_cluster0[analysis_dropdown_options],
+        name = "Clúster 0",
+        jitter = 0.3,
+        pointpos = -1.8,
+        boxpoints = 'outliers',
+        marker = dict(
+            color = 'rgb(7,40,89)'),
+        line = dict(
+            color = 'rgb(7,40,89)')
+    )
+
+    boxplot_1 = go.Box(
+        y = df_cluster1[analysis_dropdown_options],
+        name = "Clúster 1",
+        boxpoints = 'outliers',
+        marker = dict(
+            color = 'rgb(9,56,125)'),
+        line = dict(
+            color = 'rgb(9,56,125)')
+    )
+
+    boxplot_2 = go.Box(
+        y = df_cluster2[analysis_dropdown_options],
+        name = "Clúster 2",
+        boxpoints = 'suspectedoutliers',
+        marker = dict(
+            color = 'rgb(8,81,156)',
+            outliercolor = 'rgba(219, 64, 82, 0.6)',
+            line = dict(
+                outliercolor = 'rgba(219, 64, 82, 0.6)',
+                outlierwidth = 2)),
+        line = dict(
+            color = 'rgb(8,81,156)')
+    )
+
+    boxplot_3 = go.Box(
+        y = df_cluster3[analysis_dropdown_options],
+        name = "Clúster 3",
+        boxpoints = 'outliers',
+        marker = dict(
+            color = 'rgb(107,174,214)'),
+        line = dict(
+            color = 'rgb(107,174,214)')
+    )
+
+    boxplot_4 = go.Box(
+        y = df_cluster4[analysis_dropdown_options],
+        name = "Clúster 4",
+        boxpoints = 'outliers',
+        marker = dict(
+            color = 'rgb(107,174,214)'),
+        line = dict(
+            color = 'rgb(107,174,214)')
+    )
+
+    data = [boxplot_0,boxplot_1,boxplot_2,boxplot_3,boxplot_4]
+
+    layout = go.Layout(
+        title = analysis_dropdown_options.title()
+    )
+
+    fig = go.Figure(data=data,layout=layout)
+    return [fig]
+
 
 # Main
 if __name__ == '__main__':
