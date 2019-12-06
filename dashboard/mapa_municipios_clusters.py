@@ -268,16 +268,16 @@ app.layout = html.Div(
                                     locations=df_master['str_dpto_mpio'], # Esto debería coincidir con el "id" en el geojson
                                     z=df_master['labels'], # Métrica (lo que se va a medir)
                                     colorscale=[
-                                                [0,    "rgb(255,255,0)"],
-                                                [0.20, "rgb(255,255,0)"],
-                                                [0.20, "rgb(166,206,227)"],
-                                                [0.40, "rgb(166,206,227)"],
-                                                [0.40, "rgb(255,0,0)"],
-                                                [0.60, "rgb(255,0,0)"],
-                                                [0.60, "rgb(51,160,44)"],
-                                                [0.80, "rgb(51,160,44)"],
-                                                [0.80, "rgb(138,43,226)"],
-                                                [1,    "rgb(138,43,226)"]], #Colores del degradé del mapa: Cividis, Viridis, Magma 
+                                                [0,    "blue"],
+                                                [0.20, "blue"],
+                                                [0.20, "orange"],
+                                                [0.40, "orange"],
+                                                [0.40, "green"],
+                                                [0.60, "green"],
+                                                [0.60, "red"],
+                                                [0.80, "red"],
+                                                [0.80, "rgb(73,33,109)"],
+                                                [1,    "rgb(73,33,109)"]], #Colores del degradé del mapa: Cividis, Viridis, Magma 
                                     text=df_master['u_mpio'],
                                     colorbar=
                                     {
@@ -437,16 +437,16 @@ def update_map(cluster_dropdown):
                                     locations=filtered_df['str_dpto_mpio'], # Esto debería coincidir con el "id" en el geojson
                                     z=filtered_df['labels'], # Métrica (lo que se va a medir)
                                     colorscale= [
-                                                [0,    "rgb(255,255,0)"],
-                                                [0.20, "rgb(255,255,0)"],
-                                                [0.20, "rgb(166,206,227)"],
-                                                [0.40, "rgb(166,206,227)"],
-                                                [0.40, "rgb(255,0,0)"],
-                                                [0.60, "rgb(255,0,0)"],
-                                                [0.60, "rgb(51,160,44)"],
-                                                [0.80, "rgb(51,160,44)"],
-                                                [0.80, "rgb(138,43,226)"],
-                                                [1,    "rgb(138,43,226)"]], #Colores del degradé del mapa: Cividis, Viridis, Magma 
+                                                [0,    "blue"],
+                                                [0.20, "blue"],
+                                                [0.20, "orange"],
+                                                [0.40, "orange"],
+                                                [0.40, "green"],
+                                                [0.60, "green"],
+                                                [0.60, "red"],
+                                                [0.80, "red"],
+                                                [0.80, "rgb(73,33,109)"],
+                                                [1,    "rgb(73,33,109)"]], #Colores del degradé del mapa: Cividis, Viridis, Magma 
                                     text=text,
                                     colorbar=
                                     {
@@ -496,11 +496,11 @@ def update_barplot(cluster_dropdown,analysis_dropdown_options,top_button_selecto
         df_cluster3 = filtered_df[filtered_df['labels'] == 3].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
         df_cluster4 = filtered_df[filtered_df['labels'] == 4].sort_values(by = analysis_dropdown_options, ascending = False)[0:7]
         return [{'data': [
-                        {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0'},
-                        {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1'},
-                        {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2'},
-                        {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3'},
-                        {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4'}
+                        {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0','opacity' : 0.9},
+                        {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1','opacity' : 0.9},
+                        {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2','opacity' : 0.9},
+                        {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3','opacity' : 0.9},
+                        {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4','opacity' : 0.9}
                         ],
                         'layout': {
                         'title': analysis_dropdown_options.title() + ' Highest 5'}
@@ -513,11 +513,11 @@ def update_barplot(cluster_dropdown,analysis_dropdown_options,top_button_selecto
         df_cluster3 = filtered_df[filtered_df['labels'] == 3].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
         df_cluster4 = filtered_df[filtered_df['labels'] == 4].sort_values(by = analysis_dropdown_options, ascending = True)[0:7]
         return [{'data':[
-                        {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0'},
-                        {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1'},
-                        {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2'},
-                        {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3'},
-                        {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4'}
+                        {'x': df_cluster0['municipio'], 'y': df_cluster0[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 0','opacity' : 0.9},
+                        {'x': df_cluster1['municipio'], 'y': df_cluster1[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 1','opacity' : 0.9},
+                        {'x': df_cluster2['municipio'], 'y': df_cluster2[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 2','opacity' : 0.9},
+                        {'x': df_cluster3['municipio'], 'y': df_cluster3[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 3','opacity' : 0.9},
+                        {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4','opacity' : 0.9}
                         ],
                         'layout': {
                         'title': analysis_dropdown_options.title() + ' Lowest 5'}
@@ -551,7 +551,7 @@ def update_scatterplot(cluster_dropdown,analysis_dropdown_options,scatter1_dropd
                         'line': {'width': 0.5, 'color': 'white'}
                     },
                     name = 'Clúster ' + str(i)
-                ) for i in filtered_df.labels.unique()
+                ) for i in sorted(filtered_df.labels.unique())
             ],
             'layout': dict(
                 xaxis={'type': 'log', 'title': scatter1_dropdown_options.title()},
@@ -559,8 +559,10 @@ def update_scatterplot(cluster_dropdown,analysis_dropdown_options,scatter1_dropd
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
                 hovermode='closest'
-            )
+            ),
+            'marker_color' : 'Set1'
         }]
+
 
 
 @app.callback(
@@ -579,16 +581,16 @@ def update_barplot_cluster(cluster_dropdown):
     df_cluster3 = filtered_df[filtered_df['labels'] == 3].describe().loc['mean',lista_columnas_analisis]
     df_cluster4 = filtered_df[filtered_df['labels'] == 4].describe().loc['mean',lista_columnas_analisis]
     return [{'data':[
-                    {'x': df_cluster0.index, 'y': df_cluster0.values, 'type': 'bar', 'name': 'Clúster 0'},
-                    {'x': df_cluster1.index, 'y': df_cluster1.values, 'type': 'bar', 'name': 'Clúster 1'},
-                    {'x': df_cluster2.index, 'y': df_cluster2.values, 'type': 'bar', 'name': 'Clúster 2'},
-                    {'x': df_cluster2.index, 'y': df_cluster3.values, 'type': 'bar', 'name': 'Clúster 3'},
-                    {'x': df_cluster2.index, 'y': df_cluster4.values, 'type': 'bar', 'name': 'Clúster 4'}
+                    {'x': df_cluster0.index, 'y': df_cluster0.values, 'type': 'bar', 'name': 'Clúster 0','opacity' : 0.9},
+                    {'x': df_cluster1.index, 'y': df_cluster1.values, 'type': 'bar', 'name': 'Clúster 1','opacity' : 0.9},
+                    {'x': df_cluster2.index, 'y': df_cluster2.values, 'type': 'bar', 'name': 'Clúster 2','opacity' : 0.9},
+                    {'x': df_cluster2.index, 'y': df_cluster3.values, 'type': 'bar', 'name': 'Clúster 3','opacity' : 0.9},
+                    {'x': df_cluster2.index, 'y': df_cluster4.values, 'type': 'bar', 'name': 'Clúster 4','opacity' : 0.9}
                     ],
                         'layout': {
-                        'title': 'Clúster Variables',
-                        'orientation':'h'}
+                        'title': 'Clúster Variables'}
                 }]
+    
 
 
 @app.callback(
@@ -611,57 +613,36 @@ def update_boxplot(cluster_dropdown,analysis_dropdown_options):
     boxplot_0 = go.Box(
         y = df_cluster0[analysis_dropdown_options],
         name = "Clúster 0",
-        jitter = 0.3,
-        pointpos = -1.8,
         boxpoints = 'outliers',
-        marker = dict(
-            color = 'rgb(7,40,89)'),
-        line = dict(
-            color = 'rgb(7,40,89)')
+        marker_color = 'blue'
     )
 
     boxplot_1 = go.Box(
         y = df_cluster1[analysis_dropdown_options],
         name = "Clúster 1",
         boxpoints = 'outliers',
-        marker = dict(
-            color = 'rgb(9,56,125)'),
-        line = dict(
-            color = 'rgb(9,56,125)')
+        marker_color = 'orange'
     )
 
     boxplot_2 = go.Box(
         y = df_cluster2[analysis_dropdown_options],
         name = "Clúster 2",
-        boxpoints = 'suspectedoutliers',
-        marker = dict(
-            color = 'rgb(8,81,156)',
-            outliercolor = 'rgba(219, 64, 82, 0.6)',
-            line = dict(
-                outliercolor = 'rgba(219, 64, 82, 0.6)',
-                outlierwidth = 2)),
-        line = dict(
-            color = 'rgb(8,81,156)')
+        boxpoints = 'outliers',
+        marker_color = 'green'
     )
 
     boxplot_3 = go.Box(
         y = df_cluster3[analysis_dropdown_options],
         name = "Clúster 3",
         boxpoints = 'outliers',
-        marker = dict(
-            color = 'rgb(107,174,214)'),
-        line = dict(
-            color = 'rgb(107,174,214)')
+        marker_color = 'red'
     )
 
     boxplot_4 = go.Box(
         y = df_cluster4[analysis_dropdown_options],
         name = "Clúster 4",
         boxpoints = 'outliers',
-        marker = dict(
-            color = 'rgb(107,174,214)'),
-        line = dict(
-            color = 'rgb(107,174,214)')
+        marker_color = 'rgb(73,33,109)'
     )
 
     data = [boxplot_0,boxplot_1,boxplot_2,boxplot_3,boxplot_4]
