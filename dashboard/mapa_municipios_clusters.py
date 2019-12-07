@@ -390,7 +390,7 @@ def update_dropdown(radio_button):
         Output('men_text','children') #Cambia
    ],
    [
-        Input('map-plot-municipios', 'hoverData'),# Esta es para cuando se pasa el mouse por encima
+        Input('map-plot-municipios', 'clickData'),# Esta es para cuando se le da click al municipio (hoverData para pasarlo por encima)
         Input('cluster_dropdown_options','value'),
         Input('analysis_dropdown_options','value'),
         Input('group_button_selector','value')
@@ -560,7 +560,6 @@ def update_scatterplot(cluster_dropdown,analysis_dropdown_options,scatter1_dropd
                 legend={'x': 0, 'y': 1},
                 hovermode='closest'
             ),
-            'marker_color' : 'Set1'
         }]
 
 
@@ -658,3 +657,4 @@ def update_boxplot(cluster_dropdown,analysis_dropdown_options):
 # Main
 if __name__ == '__main__':
     app.server.run(debug=True, threaded=True, port = 5011)
+    #app.server.run(debug=False, threaded=True, port = 5011, host = 'ec2-54-201-96-238.us-west-2.compute.amazonaws.com')
