@@ -1,5 +1,6 @@
 # Import required libraries
 import base64
+import re
 
 #Importaciones de dash
 import dash
@@ -78,28 +79,27 @@ cluster_options = [{'label':'Clúster 0 ', 'value' : 0},
                    {'label':'Clúster 3 ', 'value' : 3},
                    {'label':'Clúster 4 ', 'value' : 4}]
 
-age_options = [{'label': '0 - 5', 'value': '0'},
- {'label': '5 - 10', 'value': '5'},
- {'label': '10 - 15', 'value': '10'},
- {'label': '15 - 20', 'value': '15'},
- {'label': '20 - 25', 'value': '20'},
- {'label': '25 - 30', 'value': '25'},
- {'label': '30 - 35', 'value': '30'},
- {'label': '35 - 40', 'value': '35'},
- {'label': '40 - 45', 'value': '40'},
- {'label': '45 - 50', 'value': '45'},
- {'label': '50 - 55', 'value': '50'},
- {'label': '55 - 60', 'value': '55'},
- {'label': '60 - 65', 'value': '60'},
- {'label': '65 - 70', 'value': '65'},
- {'label': '70 - 75', 'value': '70'},
- {'label': '75 - 80', 'value': '75'},
- {'label': '80 - 85', 'value': '80'},
- {'label': '85 - 90', 'value': '85'},
- {'label': '90 - 95', 'value': '90'},
- {'label': '95 - 100', 'value': '95'},
- {'label': '100 - 105', 'value': '100'},
- {'label': '105 o más', 'value': '105'}]
+age_options = [{'label': '0 - 5', 'value': '1'},
+ {'label': '5 - 10', 'value': '2'},
+ {'label': '10 - 15', 'value': '3'},
+ {'label': '15 - 20', 'value': '4'},
+ {'label': '20 - 25', 'value': '5'},
+ {'label': '25 - 30', 'value': '6'},
+ {'label': '30 - 35', 'value': '7'},
+ {'label': '35 - 40', 'value': '8'},
+ {'label': '40 - 45', 'value': '9'},
+ {'label': '45 - 50', 'value': '10'},
+ {'label': '50 - 55', 'value': '11'},
+ {'label': '55 - 60', 'value': '12'},
+ {'label': '60 - 65', 'value': '13'},
+ {'label': '65 - 70', 'value': '14'},
+ {'label': '70 - 75', 'value': '15'},
+ {'label': '75 - 80', 'value': '16'},
+ {'label': '80 - 85', 'value': '17'},
+ {'label': '85 - 90', 'value': '18'},
+ {'label': '90 - 95', 'value': '19'},
+ {'label': '95 - 100', 'value': '20'},
+ {'label': '100 o más', 'value': '21'}]
 
 dict_categories = {'remuneracion':['remuneracion_p_remunerado', 'remuneracion_p_no_remunerado',
        'remuneracion_p_indeterminado'],'escolaridad':['escolaridad_p_no_escolaridad',
@@ -115,6 +115,7 @@ lista_columnas_analisis = ['alfabetizacion','analfabetismo','escolarizado', 'des
 analysis_options = [{'label': i.title(),'value': i } for i in lista_columnas_analisis]
 lista_line_analysis_options = ['p_escolarizacion', 'p_atencion_salud_formal', 'p_trabajo_remunerado']
 line_analysis_options = [{'label': i.title(),'value': i } for i in lista_line_analysis_options]
+lista_prueba = [{'label':'Escolarización','value':'p_escolarizacion'},{'label':'Atención Salud','value':'p_atencion_salud_formal'},{'label':'Trabajo Remunerado','value':'p_trabajo_remunerado'}]
 lista_barras_drop_prueba = [{'label' : i.title() ,'value' : i} for i in dict_categories]
 
 #Decoración del Frontend
@@ -124,6 +125,12 @@ ds4a_png = 'ds4a.png' # Logo DS4A
 ds4a_base64 = base64.b64encode(open(ds4a_png, 'rb').read()).decode('ascii')
 min_png = 'mintic.png' # Logo DS4A
 min_base64 = base64.b64encode(open(min_png, 'rb').read()).decode('ascii')
+
+#Carga de datos
+df_line_plot = pd.read_csv('quantity_by_cluster.csv', sep = ';')
+df_line_plot = df_line_plot.sort_values(by = 'edad')
+df_all = pd.read_csv('cs_general2.csv',sep = ',')
+
 
 app = dash.Dash(__name__)
 server = app.server
@@ -239,12 +246,20 @@ app.layout = html.Div(
                             labelStyle={'display': 'inline-block'},
                             className="dcc_control"
                         ),
+                        html.P(
+                            'Select Line plot Variable:',
+                            className="control_label"
+                        ),
                         dcc.Dropdown(
                             id='lineplot_analysis_dropdown_options',
-                            options=line_analysis_options,
+                            options=lista_prueba,
                             multi=False,
                             value=[],
                             className="dcc_control"
+                        ),
+                        html.P(
+                            'Select Variable through all clusters:',
+                            className="control_label"
                         ),
                         dcc.Dropdown(
                             id='barras_dropdown_options',
@@ -252,6 +267,10 @@ app.layout = html.Div(
                             multi=False,
                             value=[],
                             className="dcc_control"
+                        ),
+                        html.P(
+                            'Select Age range:',
+                            className="control_label"
                         ),
                         dcc.Dropdown(
                             id='age_dropdown_options',
@@ -366,10 +385,11 @@ app.layout = html.Div(
                                         mapbox_style="light", #streets, dark, light, outdoors, satellite, satellite-streets, carto-positron
                                         autosize=False,
                                         mapbox_accesstoken=token,
-                                        mapbox_zoom=4,
+                                        mapbox_zoom=4.5,
                                         uirevision= 'no reset of zoom', #Sirve para que el zoom no se actualice
                                         margin={'t': 0, 'l': 0, 'r': 0, 'b': 0, 'pad':0},
-                                        mapbox_center={"lat": 4.5709, "lon": -74.2973}
+                                        mapbox_center={"lat": 4.5709, "lon": -74.2973},
+                                        height = 650
                                     )
                             }
                         )
@@ -388,20 +408,15 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
-                        dcc.Graph(id='bar_graph_cluster',
-                                  figure={}
-    ),
+                        dcc.Graph(id='bar_graph_cluster'),
                     ],
-                    className='pretty_container eight columns',
+                    className='pretty_container seven columns',
                 ),
                 html.Div(
                     [
-                        dcc.Graph(
-        id='scatter_plot',
-        figure={}
-    )
+                        dcc.Graph(id='scatter_plot'),
                     ],
-                    className='pretty_container four columns',
+                    className='pretty_container five columns',
                 ),
             ],
             className='row'
@@ -410,7 +425,7 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
-                        dcc.Graph(id='box-plot')
+                        dcc.Graph(id='line-plot')
                     ],
                     className='pretty_container seven columns',
                 ),
@@ -442,7 +457,7 @@ app.layout = html.Div(
                     [
                         dcc.Graph(id='bars-cluster')
                     ],
-                    #className='pretty_container seven columns',
+                    className='pretty_container',
                 )
             ],
             #className='row'
@@ -559,10 +574,11 @@ def update_map(cluster_dropdown):
                                         mapbox_style="light", #streets, dark, light, outdoors, satellite, satellite-streets, carto-positron
                                         autosize=False,
                                         mapbox_accesstoken=token,
-                                        mapbox_zoom=4,
+                                        mapbox_zoom=4.5,
                                         uirevision= 'no reset of zoom', #Sirve para que el zoom no se actualice
                                         margin={'t': 0, 'l': 0, 'r': 0, 'b': 0, 'pad':0},
-                                        mapbox_center={"lat": 4.5709, "lon": -74.2973}
+                                        mapbox_center={"lat": 4.5709, "lon": -74.2973},
+                                        height = 650
                                     )
                             }]
 
@@ -592,7 +608,9 @@ def update_barplot(cluster_dropdown,analysis_dropdown_options,top_button_selecto
                         {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4','opacity' : 0.9}
                         ],
                         'layout': {
-                        'title': analysis_dropdown_options.title() + ' Highest 5'}
+                        'title': analysis_dropdown_options.title() + ' Highest 5',
+                        'xaxis': {'title' : 'Municipality'},
+                        'yaxis': {'title' : 'Percentage'}}
                 }]
     else:
         filtered_df = filtrar_cluster(df_master,cluster_dropdown)
@@ -609,7 +627,9 @@ def update_barplot(cluster_dropdown,analysis_dropdown_options,top_button_selecto
                         {'x': df_cluster4['municipio'], 'y': df_cluster4[analysis_dropdown_options], 'type': 'bar', 'name': 'Clúster 4','opacity' : 0.9}
                         ],
                         'layout': {
-                        'title': analysis_dropdown_options.title() + ' Lowest 5'}
+                        'title': analysis_dropdown_options.title() + ' Lowest 5',
+                        'xaxis': {'title' : 'Municipality'},
+                        'yaxis': {'title' : 'Percentage'}}
                 }]
 
 
@@ -643,11 +663,12 @@ def update_scatterplot(cluster_dropdown,analysis_dropdown_options,scatter1_dropd
                 ) for i in sorted(filtered_df.labels.unique())
             ],
             'layout': dict(
-                xaxis={'type': 'log', 'title': scatter1_dropdown_options.title()},
+                xaxis={'title': scatter1_dropdown_options.title()},
                 yaxis={'title': scatter2_dropdown_options.title()},
-                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                margin={'l': 40, 'b': 40, 't': 25, 'r': 10},
                 legend={'x': 0, 'y': 1},
-                hovermode='closest'
+                hovermode='closest',
+                title = scatter1_dropdown_options.title() + ' vs ' + scatter2_dropdown_options.title()
             ),
         }]
 
@@ -676,7 +697,9 @@ def update_barplot_cluster(cluster_dropdown):
                     {'x': df_cluster2.index, 'y': df_cluster4.values, 'type': 'bar', 'name': 'Clúster 4','opacity' : 0.9}
                     ],
                         'layout': {
-                        'title': 'Clúster Variables'}
+                        'title': 'Clúster Variables',
+                        'xaxis': {'title' : 'Variable'},
+                        'yaxis': {'title' : 'Percentage'}}
                 }]
     
 
@@ -742,11 +765,7 @@ def update_boxplot(cluster_dropdown,analysis_dropdown_options):
     fig = go.Figure(data=data,layout=layout)
     return [fig]
 '''
-df_line_plot = pd.read_csv('quantity_by_cluster.csv', sep = ';')
-df_line_plot = df_line_plot.sort_values(by = 'edad')
-df_all = pd.read_csv('cs_general_sample.csv',sep = ',')
 
-'''
 @app.callback(
     [
     Output('line-plot','figure')
@@ -758,33 +777,16 @@ df_all = pd.read_csv('cs_general_sample.csv',sep = ',')
 )
 def update_lineplot(cluster_dropdown, lineplot_analysis_dropdown_options):
     filtered_df = filtrar_cluster_tabla_positivos(df_line_plot,cluster_dropdown)
-    filtered_df_m = filtered_df[filtered_df['sexo'] == 'h']
-    filtered_df_f = filtered_df[filtered_df['sexo'] == 'm']
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x = filtered_df_m['edad'], y = filtered_df_m[lineplot_analysis_dropdown_options],
-                    mode='lines',
-                    name='Men'))
-    fig.add_trace(go.Scatter(x = filtered_df_f['edad'], y = filtered_df_f[lineplot_analysis_dropdown_options],
-                    mode='lines',
-                    name='Women'))
-    return [fig]
-'''
-
-@app.callback(
-    [
-    Output('box-plot','figure')
-    ],
-    [
-    Input('cluster_dropdown_options','value'),
-    Input('lineplot_analysis_dropdown_options','value')
-    ]
-)
-def update_lineplot(cluster_dropdown, lineplot_analysis_dropdown_options):
-    filtered_df = filtrar_cluster_tabla_positivos(df_line_plot,cluster_dropdown)
     filtered_df_m = filtered_df[filtered_df['sexo'] == 'h'].groupby(by = 'edad').mean()
     filtered_df_f = filtered_df[filtered_df['sexo'] == 'm'].groupby(by = 'edad').mean()
+    if lineplot_analysis_dropdown_options == 'p_escolarizacion':
+        title = 'Escolarización'
+    elif lineplot_analysis_dropdown_options == 'p_atencion_salud_formal':
+        title = 'Atención Salud'
+    else:
+        title = 'Trabajo Remunerado'
     layout = go.Layout(
-        title = lineplot_analysis_dropdown_options.title()
+        title = title
     )
     fig = go.Figure(layout = layout)
     fig.add_trace(go.Scatter(x = filtered_df_m.index, y = filtered_df_m[lineplot_analysis_dropdown_options],
@@ -793,6 +795,8 @@ def update_lineplot(cluster_dropdown, lineplot_analysis_dropdown_options):
     fig.add_trace(go.Scatter(x = filtered_df_f.index, y = filtered_df_f[lineplot_analysis_dropdown_options],
                     mode='lines',
                     name='Women'))
+    fig.update_xaxes(title_text='Age')
+    fig.update_yaxes(title_text='Percentage')
     
     
     return [fig]
@@ -813,18 +817,25 @@ def update_bars_cluster(cluster_dropdown,barras_dropdown_options,age_dropdown_op
     filtered_df = filtered_df[filtered_df['edad'].isin(age_dropdown_options)]
     if barras_dropdown_options == 'remuneracion':
         lista_variables = dict_categories['remuneracion']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
     elif barras_dropdown_options == 'escolaridad':
         lista_variables = dict_categories['escolaridad']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
     elif barras_dropdown_options == 'salud':
         lista_variables = dict_categories['salud']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
     elif barras_dropdown_options == 'pareja':
         lista_variables = dict_categories['pareja']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
     elif barras_dropdown_options == 'hijos':
         lista_variables = dict_categories['hijos']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
     elif barras_dropdown_options == 'inmigracion_1':
         lista_variables = dict_categories['inmigracion_1']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
     else:
         lista_variables = dict_categories['inmigracion_5']
+        lista_variables_x = [re.sub(r'.+_\w_+','',i).title() for i in lista_variables]
 
     df_cluster0 = filtered_df[filtered_df['cluster_a'] == 0]
     df_0_h = df_cluster0.groupby(['sexo','edad']).mean()[lista_variables].loc['H'].mean()
@@ -843,24 +854,25 @@ def update_bars_cluster(cluster_dropdown,barras_dropdown_options,age_dropdown_op
     df_4_m = df_cluster4.groupby(['sexo','edad']).mean()[lista_variables].loc['M'].mean()
     return [{
             'data': [
-                {'x': lista_variables, 'y': list(df_0_h.values), 'type': 'bar','name':'Men','xaxis':'x1','legendgroup':'Men','marker':{'color':'blue'}},
-                {'x': lista_variables, 'y': list(df_0_m.values), 'type': 'bar','name':'Women','xaxis' : 'x1','legendgroup':'Women','marker':{'color':'pink'}},
-                {'x': lista_variables, 'y': list(df_1_h.values), 'type': 'bar','xaxis':'x2','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
-                {'x': lista_variables, 'y': list(df_1_m.values), 'type': 'bar','xaxis':'x2','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
-                {'x': lista_variables, 'y': list(df_2_h.values), 'type': 'bar','xaxis':'x3','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
-                {'x': lista_variables, 'y': list(df_2_m.values), 'type': 'bar','xaxis':'x3','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
-                {'x': lista_variables, 'y': list(df_3_h.values), 'type': 'bar','xaxis':'x4','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
-                {'x': lista_variables, 'y': list(df_3_m.values), 'type': 'bar','xaxis':'x4','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
-                {'x': lista_variables, 'y': list(df_4_h.values), 'type': 'bar','xaxis':'x5','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
-                {'x': lista_variables, 'y': list(df_4_m.values), 'type': 'bar','xaxis':'x5','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
+                {'x': lista_variables_x, 'y': list(df_0_h.values), 'type': 'bar','name':'Men','xaxis':'x1','legendgroup':'Men','marker':{'color':'blue'}},
+                {'x': lista_variables_x, 'y': list(df_0_m.values), 'type': 'bar','name':'Women','xaxis' : 'x1','legendgroup':'Women','marker':{'color':'pink'}},
+                {'x': lista_variables_x, 'y': list(df_1_h.values), 'type': 'bar','xaxis':'x2','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
+                {'x': lista_variables_x, 'y': list(df_1_m.values), 'type': 'bar','xaxis':'x2','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
+                {'x': lista_variables_x, 'y': list(df_2_h.values), 'type': 'bar','xaxis':'x3','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
+                {'x': lista_variables_x, 'y': list(df_2_m.values), 'type': 'bar','xaxis':'x3','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
+                {'x': lista_variables_x, 'y': list(df_3_h.values), 'type': 'bar','xaxis':'x4','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
+                {'x': lista_variables_x, 'y': list(df_3_m.values), 'type': 'bar','xaxis':'x4','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
+                {'x': lista_variables_x, 'y': list(df_4_h.values), 'type': 'bar','xaxis':'x5','name':'Men','showlegend' : False,'legendgroup':'Men','marker':{'color':'blue'}},
+                {'x': lista_variables_x, 'y': list(df_4_m.values), 'type': 'bar','xaxis':'x5','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
             ],
             'layout': {
-                'title': 'Variable por género',
-                'xaxis':  {'domain':[0, 0.18],'title':'Cluster 0'},
+                'title' : barras_dropdown_options.title(),
+                'yaxis' : {'title' : 'Percentage'},
+                'xaxis' : {'domain':[0, 0.18],'title':'Cluster 0'},
                 'xaxis2': {'domain':[0.2, 0.38],'title':'Cluster 1'},
                 'xaxis3': {'domain':[0.4,0.58],'title':'Cluster 2'},
                 'xaxis4': {'domain':[0.6, 0.78],'title':'Cluster 3'},
-                'xaxis5': {'domain':[0.8,0.98],'title':'Cluster 4'}
+                'xaxis5': {'domain':[0.8,0.98],'title':'Cluster 4'},
             },
         }]
 # Main
