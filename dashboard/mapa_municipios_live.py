@@ -111,12 +111,19 @@ dict_categories = {'remuneracion':['remuneracion_p_remunerado', 'remuneracion_p_
        'inmigracion1_p_si', 'inmigracion1_p_indeterminado'],'inmigracion_5':['inmigracion5_p_no',
        'inmigracion5_p_si', 'inmigracion5_p_indeterminado']}
 
+list_categories_alone = ['remuneracion_p_remunerado', 'remuneracion_p_no_remunerado','remuneracion_p_indeterminado','escolaridad_p_no_escolaridad','escolaridad_p_basico',
+'escolaridad_p_avanzado','escolaridad_p_indeterminado','salud_p_atencion_formal', 'salud_p_atencion_no_formal','salud_p_atencion_indeterminado','pareja_p_si', 'pareja_p_no',
+'pareja_p_indeterminado','hijos_p_0', 'hijos_p_1', 'hijos_p_2','hijos_p_3_o_mas','inmigracion1_p_no','inmigracion1_p_si', 'inmigracion1_p_indeterminado','inmigracion5_p_no',
+'inmigracion5_p_si', 'inmigracion5_p_indeterminado']
+
 lista_columnas_analisis = ['alfabetizacion','analfabetismo','escolarizado', 'descolarizado', 'remunerado','no_remunerado', 'atencion_formal', 'atencion_informal','no_necesita_atencion']
 analysis_options = [{'label': i.title(),'value': i } for i in lista_columnas_analisis]
 lista_line_analysis_options = ['p_escolarizacion', 'p_atencion_salud_formal', 'p_trabajo_remunerado']
 line_analysis_options = [{'label': i.title(),'value': i } for i in lista_line_analysis_options]
 lista_prueba = [{'label':'Escolarización','value':'p_escolarizacion'},{'label':'Atención Salud','value':'p_atencion_salud_formal'},{'label':'Trabajo Remunerado','value':'p_trabajo_remunerado'}]
 lista_barras_drop_prueba = [{'label' : i.title() ,'value' : i} for i in dict_categories]
+lista_line_plot = [{'label': re.sub(r'_\w_',': ',i).title(),'value': i } for i in list_categories_alone]
+
 
 #Decoración del Frontend
 test_png = 'team_32.png' # Logo Team_32
@@ -130,6 +137,7 @@ min_base64 = base64.b64encode(open(min_png, 'rb').read()).decode('ascii')
 df_line_plot = pd.read_csv('quantity_by_cluster.csv', sep = ';')
 df_line_plot = df_line_plot.sort_values(by = 'edad')
 df_all = pd.read_csv('cs_general2.csv',sep = ',')
+df_all = df_all.sort_values(by = 'edad')
 
 
 app = dash.Dash(__name__)
@@ -252,7 +260,7 @@ app.layout = html.Div(
                         ),
                         dcc.Dropdown(
                             id='lineplot_analysis_dropdown_options',
-                            options=lista_prueba,
+                            options=lista_line_plot,
                             multi=False,
                             value=[],
                             className="dcc_control"
@@ -776,15 +784,11 @@ def update_boxplot(cluster_dropdown,analysis_dropdown_options):
     ]
 )
 def update_lineplot(cluster_dropdown, lineplot_analysis_dropdown_options):
-    filtered_df = filtrar_cluster_tabla_positivos(df_line_plot,cluster_dropdown)
-    filtered_df_m = filtered_df[filtered_df['sexo'] == 'h'].groupby(by = 'edad').mean()
-    filtered_df_f = filtered_df[filtered_df['sexo'] == 'm'].groupby(by = 'edad').mean()
-    if lineplot_analysis_dropdown_options == 'p_escolarizacion':
-        title = 'Escolarización'
-    elif lineplot_analysis_dropdown_options == 'p_atencion_salud_formal':
-        title = 'Atención Salud'
-    else:
-        title = 'Trabajo Remunerado'
+    filtered_df = filtrar_cluster_tabla_positivos(df_all,cluster_dropdown)
+    filtered_df_m = filtered_df[filtered_df['sexo'] == 'H'].groupby(by = 'edad').mean()
+    filtered_df_f = filtered_df[filtered_df['sexo'] == 'M'].groupby(by = 'edad').mean()
+    title = re.sub(r'_\w_',': ',lineplot_analysis_dropdown_options).title()
+    title = re.sub(r'_',' ',title)
     layout = go.Layout(
         title = title
     )
@@ -795,7 +799,7 @@ def update_lineplot(cluster_dropdown, lineplot_analysis_dropdown_options):
     fig.add_trace(go.Scatter(x = filtered_df_f.index, y = filtered_df_f[lineplot_analysis_dropdown_options],
                     mode='lines',
                     name='Women'))
-    fig.update_xaxes(title_text='Age')
+    fig.update_xaxes(title_text='Age (DANE Range)')
     fig.update_yaxes(title_text='Percentage')
     
     
@@ -852,6 +856,7 @@ def update_bars_cluster(cluster_dropdown,barras_dropdown_options,age_dropdown_op
     df_cluster4 = filtered_df[filtered_df['cluster_a'] == 4]
     df_4_h = df_cluster4.groupby(['sexo','edad']).mean()[lista_variables].loc['H'].mean()
     df_4_m = df_cluster4.groupby(['sexo','edad']).mean()[lista_variables].loc['M'].mean()
+    string = ''
     return [{
             'data': [
                 {'x': lista_variables_x, 'y': list(df_0_h.values), 'type': 'bar','name':'Men','xaxis':'x1','legendgroup':'Men','marker':{'color':'blue'}},
@@ -866,7 +871,7 @@ def update_bars_cluster(cluster_dropdown,barras_dropdown_options,age_dropdown_op
                 {'x': lista_variables_x, 'y': list(df_4_m.values), 'type': 'bar','xaxis':'x5','name':'Women','showlegend': False,'legendgroup':'Women','marker':{'color':'pink'}},
             ],
             'layout': {
-                'title' : barras_dropdown_options.title(),
+                'title' : barras_dropdown_options.title() + ' (Age Range: ' + string.join(['-' + str(i) + '-' for i in age_dropdown_options]) + ' )',
                 'yaxis' : {'title' : 'Percentage'},
                 'xaxis' : {'domain':[0, 0.18],'title':'Cluster 0'},
                 'xaxis2': {'domain':[0.2, 0.38],'title':'Cluster 1'},
